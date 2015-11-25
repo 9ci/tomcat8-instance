@@ -1,0 +1,224 @@
+#!/bin/sh
+# Script to create a CATALINA_BASE directory for your own tomcat
+
+PROG=`basename $0`
+INSTANCE="tomcat8-tmp"
+HPORT=8080
+APORT=8009
+CPORT=8005
+CWORD="STOPTOI"
+warned=0
+warnlowport=0
+
+usage() {
+  echo "Usage: $PROG [options] <instancename>"
+  echo "  instancename: name of the tomcat instance to create"
+  echo "Options:"
+  echo "  -h, --help       Display this help message"
+  echo "  -p httpport      HTTP port to be used by Tomcat (default is $HPORT)"
+  echo "  -a ajpport       AJP port to be used by Tomcat (default is $APORT)"
+  echo "  -c controlport   Server shutdown control port (default is $CPORT)"
+  echo "  -w magicword     Word to send to trigger shutdown (default is $CWORD)"
+}
+
+checkport() {
+  type=$1
+  port=$2
+  # Fail if port is non-numeric
+  num=`expr ${port} + 1 2> /dev/null`
+  if [ $? != 0 ] || [ $num -lt 2 ]; then
+    echo "Error: ${type} port '${port}' is not a valid TCP port number."
+    exit 1
+  fi
+
+  # Fail if port is above 65535
+  if [ ${port} -gt 65535 ]; then
+    echo "Error: ${type} port ${port} is above TCP port numbers (> 65535)."
+    exit 1
+  fi
+
+  # Warn if port is below 1024 (once)
+  if [ ${warnlowport} -eq 0 ]; then 
+    if [ ${port} -lt 1024 ]; then
+      echo "Warning: ports below 1024 are reserved to the super-user."
+      warnlowport=1
+      warned=1
+    fi
+  fi
+
+  # Warn if port appears to be in use
+  if nc localhost "${port}" -z > /dev/null; then
+	echo "Warning: ${type} port ${port} appears to be in use."
+	warned=1
+  fi
+}
+
+if [ "$#" -lt 1 ]; then
+  usage
+  exit 1
+fi
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+  usage
+  exit 0
+fi
+
+while getopts ":p:a:c:w:h" options; do
+  case $options in
+    p ) HPORT=$OPTARG ;;
+    a ) APORT=$OPTARG ;;
+    c ) CPORT=$OPTARG ;;
+    w ) CWORD=$OPTARG ;;
+    h ) usage;;
+    * ) echo "Error: Unknown parameter '$OPTARG'."
+        exit 1;;
+  esac
+done
+
+shift $(($OPTIND - 1))
+INSTANCE=$1
+shift
+echo "You are about to create a Tomcat instance in directory /var/lib/'$INSTANCE'"
+
+# Fail if no INSTANCE specified
+if [ -z "${INSTANCE}" ]; then
+  echo "Error: No INSTANCE specified (use -d)."
+  exit 1
+fi
+
+# Fail if ports are the same
+if [ "${HPORT}" = "${CPORT}" ]; then
+  echo "Error: HTTP port and control port must be different."
+  exit 1
+fi
+
+# Fail if ports are the same
+if [ "${HPORT}" = "${APORT}" ]; then
+  echo "Error: HTTP port and AJP port must be different."
+  exit 1
+fi
+
+# Fail if ports are the same
+if [ "${APORT}" = "${CPORT}" ]; then
+  echo "Error: AJP port and control port must be different."
+  exit 1
+fi
+
+# Fail if INSTANCE directory already exists
+if [ -d "/var/lib/${INSTANCE}" ]; then
+  echo "Error: INSTANCE directory already exists."
+  exit 1
+fi
+
+# Check ports
+checkport HTTP "${HPORT}"
+checkport AJP "${APORT}"
+checkport Control "${CPORT}"
+
+# Ask for confirmation if warnings were printed out
+if [ ${warned} -eq 1 ]; then 
+  echo "Type <ENTER> to continue, <CTRL-C> to abort."
+  read answer
+fi
+
+
+INSTANCE_PATH="/var/lib/${INSTANCE}"
+
+
+# Create path
+mkdir -p "${INSTANCE_PATH}"
+mkdir -p "/etc/${INSTANCE}"
+
+cp -r /usr/share/tomcat8/skel/conf/* "/etc/${INSTANCE}"
+
+ln -s  "/etc/${INSTANCE}" "${INSTANCE_PATH}/conf"
+chown -Rf tomcat8:tomcat8 "${INSTANCE_PATH}/conf"
+chmod -Rf 755 "${INSTANCE_PATH}/conf"
+
+mkdir -p "${INSTANCE_PATH}/conf/appli"
+chown -Rf tomcat8:tomcat8 "${INSTANCE_PATH}/conf/appli"
+chmod -Rf 755 "${INSTANCE_PATH}/conf/appli"
+
+mkdir -p "${INSTANCE_PATH}/conf/Catalina"
+
+chown -Rf tomcat8:tomcat8 "${INSTANCE_PATH}/conf/Catalina"
+chmod -Rf 755 "${INSTANCE_PATH}/conf/Catalina"
+
+mkdir -p "${INSTANCE_PATH}/lib"
+chown -Rf tomcat8:tomcat8 "${INSTANCE_PATH}/lib"
+chmod -Rf 755 "${INSTANCE_PATH}/lib"
+
+ln -s "/var/log/${INSTANCE}" "${INSTANCE_PATH}/logs"
+chown -Rf tomcat8:tomcat8 "${INSTANCE_PATH}/logs"
+chmod -Rf 755 "${INSTANCE_PATH}/logs"
+
+mkdir -p "${INSTANCE_PATH}/webapps"
+chown -Rf tomcat8:tomcat8 "${INSTANCE_PATH}/webapps"
+chmod -Rf 755 "${INSTANCE_PATH}/webapps"
+
+mkdir -p "/var/cache/${INSTANCE}"
+ln -s "/var/cache/${INSTANCE}" "${INSTANCE_PATH}/work"
+chown -Rf tomcat8:tomcat8 "/var/cache/${INSTANCE}"
+chmod -Rf 755 "/var/cache/${INSTANCE}"
+
+mkdir -p "/var/tmp/${INSTANCE}"
+chown -Rf tomcat8:tomcat8 "/var/tmp/${INSTANCE}"
+chmod -Rf 755 "/var/tmp/${INSTANCE}"
+
+mkdir -p "/var/log/${INSTANCE}"
+chown -Rf tomcat8:tomcat8 "/var/log/${INSTANCE}"
+chmod -Rf 755 "/var/log/${INSTANCE}"
+
+mkdir -p /usr/share/tomcat8/server
+ln -s "/usr/share/tomcat8/server" "${INSTANCE_PATH}/server" 
+chown -Rf tomcat8:tomcat8 /usr/share/tomcat8/server
+chmod -Rf 755 /usr/share/tomcat8/server
+
+mkdir -p /usr/share/tomcat8/server/classes
+chown -Rf tomcat8:tomcat8 /usr/share/tomcat8/server/classes
+chmod -Rf 755 /usr/share/tomcat8/server/classes
+
+mkdir -p /usr/share/tomcat8/shared
+ln -s "/usr/share/tomcat8/shared" "${INSTANCE_PATH}/shared" 
+chown -Rf tomcat8:tomcat8 /usr/share/tomcat8/shared
+chmod -Rf 755 /usr/share/tomcat8/shared
+
+mkdir -p /usr/share/tomcat8/shared/classes
+chown -Rf tomcat8:tomcat8 /usr/share/tomcat8/shared/classes
+chmod -Rf 755 /usr/share/tomcat8/shared/classes
+
+mkdir -p /usr/share/tomcat8/common
+ln -s "/usr/share/tomcat8/common" "${INSTANCE_PATH}/common" 
+chown -Rf tomcat8:tomcat8 /usr/share/tomcat8/common
+chmod -Rf 755 /usr/share/tomcat8/common
+
+mkdir -p /usr/share/tomcat8/common/classes
+chown -Rf tomcat8:tomcat8 /usr/share/tomcat8/common/classes
+chmod -Rf 755 /usr/share/tomcat8/common/classes
+
+chown -Rf tomcat8:tomcat8 "/var/lib/${INSTANCE}"
+chmod -Rf 755 "/var/lib/${INSTANCE}"
+
+# Handle server.xml
+
+NOM_SERVEUR=$HOSTNAME
+SUFFIXE_NOM_SERVEUR=`echo $NOM_SERVEUR | rev | cut -c1-5 | rev`
+SUFFIXE_INSTANCE=`echo $INSTANCE |  cut -d "-" -f 2`
+
+cat /usr/share/tomcat8/skel/conf/server.xml | \
+sed -e "s/shutdown=\"SHUTDOWN\"/shutdown=\"${CWORD}\"/"  | \
+sed -e "s/port=\"8080\"/port=\"${HPORT}\"/" | \
+sed -e "s/port=\"8009\"/port=\"${APORT}\"/"  | \
+sed -e "s/port=\"8005\"/port=\"${CPORT}\"/" | \
+sed -e "s/<Engine name=\"Catalina\" defaultHost=\"localhost\">/<Engine name=\"Catalina\" defaultHost=\"localhost\" jvmRoute=\"jvm${SUFFIXE_NOM_SERVEUR}-${SUFFIXE_INSTANCE}\">/" | \
+sed -e 's/unpackWARs="true"/unpackWARs="false"/' | \
+sed -e 's/autoDeploy="true"/autoDeploy="false"/' > ${INSTANCE_PATH}/conf/server.xml
+		
+# Handle Default
+cat /usr/share/tomcat8/tmpl/tomcat8.default | sed -e "s/INSTANCE/${INSTANCE}/" > /etc/default/$INSTANCE
+
+# Handle SystemD
+cat /usr/share/tomcat8/tmpl/tomcat8.service | sed -e "s/INSTANCE/${INSTANCE}/" > /etc/systemd/system/$INSTANCE.service
+systemctl enable ${INSTANCE}
+
+echo "* New Tomcat instance created ${INSTANCE}"
+echo "* Run systemctl start ${INSTANCE} to start your Tomcat instance"
