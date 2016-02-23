@@ -1,8 +1,8 @@
-Package: tomcat8-instance-8.0.28-maedi
-Version: 1.0
+Package: tomcat8-instance-8.0.28
+Version: 1.0.1
 Section: base
 Priority: optional
 Architecture: all
 Depends: bash
 Maintainer: Mr S HEURTEMATTE <sebastien.heurtematte@diplomatie.gouv.fr>
-Description: Création d'instance tomcat8
+Description: CrÃ©ation d'instance tomcat8

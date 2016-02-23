@@ -1,6 +1,6 @@
 # tomcat8-instance
 
-Création de plusieurs instances tomcat8 sur une Debian.
+Création de plusieurs instances tomcat8 sur une Debian 8.
 
 ## Création du livrable
 
@@ -32,10 +32,13 @@ Usage: `tomcat8-instance-create [options] <instancename>`
 Exemple :
 
 ```shell
-tomcat8-instance-create -p 8081 -c 8006 -a 8009 tomcat8-1
+tomcat8-instance-create -p 8181 -a 8011 -c 9001 tomcat8-1
+tomcat8-instance-create -p 8182 -a 8012 -c 9002 tomcat8-2
+tomcat8-instance-create -p 8183 -a 8013 -c 9003 tomcat8-3
+tomcat8-instance-create -p 8184 -a 8014 -c 9004 tomcat8-4
+tomcat8-instance-create -p 8185 -a 8015 -c 9005 tomcat8-5
+tomcat8-instance-create -p 8186 -a 8016 -c 9006 tomcat8-6
 ```
-
-
 
 ## tomcat8-build.sh
 
@@ -61,7 +64,7 @@ Permet de supprimer une instance du serveur.
 
 ## Licence
 
-applitutoriel-service est sous [licence cecill 2.1](./LICENCE.md).
+`tomcat8-instance` est sous [licence cecill 2.1](./LICENCE.md).
 
-Site web : [![http://www.cecill.info](http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html)](http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html)
+Site web : [http://www.cecill.info](http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html)
 

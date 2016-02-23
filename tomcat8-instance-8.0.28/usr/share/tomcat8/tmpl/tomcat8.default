@@ -1,6 +1,6 @@
 
 CATALINA_BASE=/var/lib/INSTANCE
-CATALINA_TMPDIR=/var/lib/INSTANCE
+CATALINA_TMPDIR=/var/tmp/INSTANCE
 
 # Run Tomcat as this user ID. Not setting this or leaving it blank will use the
 # default of tomcat8.
@@ -44,7 +44,7 @@ JAVA_OPTS="-Djava.awt.headless=true -Xmx1024M -Xms1024M -XX:+PrintGCDetails -XX:
 
 # Location of the JVM temporary directory
 # WARNING: This directory will be destroyed and recreated at every startup !
-JVM_TMP=/var/tmp/INSTANCE
+#JVM_TMP=/var/tmp/INSTANCE
 
 # If you run Tomcat on port numbers that are all higher than 1023, then you
 # do not need authbind.  It is used for binding Tomcat to lower port numbers.
